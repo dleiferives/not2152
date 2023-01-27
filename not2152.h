@@ -23,6 +23,7 @@ Token * gtokens;
 // parser!
 typedef enum
 {
+	NODE_LINE_EX,
 	NODE_NEG,
 	NODE_NUM,
 	NODE_VALUE,
@@ -36,11 +37,17 @@ struct Node{
 	Node_kind kind; // the kind of node
 	Node * ln; // left node 
 	Node * rn; // right node
+	Node * next;
 	int val; // for imm nums
 };
 
 Node * node_init(Node_kind , Node * , Node * );
 Node * value_node(Node_kind, Node*);
+Node * ex(Token ** , Token * );
 Node * value(Token ** , Token * );
 Node * num(Token ** , Token * );
+
+void tree_gen(Node * );
+void generate_code(Node * );
+void pre_gen(Node*);
 #endif

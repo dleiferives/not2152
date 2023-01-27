@@ -20,6 +20,7 @@ char isops(char c)
 	{
 		case '+':
 		case '-':
+		case ';':
 			return 1;
 	}
 	return 0;
@@ -29,6 +30,14 @@ char isops(char c)
 int ops_eq(Token *tok, char *op) {
   return memcmp(tok->s, op, tok->len) == 0 && op[tok->len] == '\0';
 }	
+
+Token * ops_pass(Token *tok, char *op)
+{
+	if(!ops_eq(tok,op))
+	{printf("ERROR @ %i\n",__LINE__);}
+	return tok->next;
+}
+
 //int o
 	//return op->kind == TOKEN_OPS && (c == op->s[0]);
 //}
@@ -126,6 +135,15 @@ Node * node_init(Node_kind kind, Node * ln, Node * rn)
 	return result;
 }
 
+Node * node_ln_init(Node_kind kind, Node * ln)
+{
+	Node * result = calloc(1, sizeof(Node));
+	result->kind = kind;
+	result->ln	 = ln;
+	return result;
+}
+	
+
 Node * num_node(int val)
 {
 	Node * result = calloc(1,sizeof(Node));
@@ -149,6 +167,15 @@ Node * ex_node(Node_kind kind, Node * ln, Node * rn)
 	new_node->rn = rn;
 	new_node->kind = kind;
 	return new_node;
+}
+
+
+Node * line(Token ** top, Token * cur)
+{
+	printf("line %i\n",cur->kind);
+	Node * node = node_ln_init(NODE_LINE_EX, ex(&cur,cur));
+	*top = ops_pass(cur,";");
+	return node;
 }
 
 // ex = value (+ ex | - ex)*
@@ -216,6 +243,7 @@ Node * num(Token ** top, Token * cur)
 	// throw a fat ol error there
 }
 
+// line = ex ";"
 // ex = value (+ ex | - ex)*
 // value = (- | +) value | num
 // num;
@@ -231,10 +259,11 @@ Node * parser(Token * tokens)
 	{
 		//printf("%ld token head adress %i - %i\n",tokens,tokens->kind,tokens->val);
 		printf("parser %i\n",i++);
-		cur = ex(&(gtokens->next),gtokens->next);	
+		cur->next = line(&(gtokens->next),gtokens->next);	
+		cur = cur->next;
 	}
 	
-	return cur;
+	return head;
 }
 
 
@@ -260,22 +289,35 @@ void pop(void)
 	puts(  "addi x2, x2, -4");
 }
 
-void generate_code(Node * node)
+
+void pre_gen(Node *node)
+{
+	if(node->kind == NODE_LINE_EX)
+	{
+		tree_gen(node->ln);
+		return;
+	}
+
+	printf("you should not end here??\n\n");
+}
+
+void tree_gen(Node * node)
 {
 	switch (node->kind)
 	{
 		case NODE_NEG:
 			printf("li	x5, -%i\n",node->val);
-			generate_code(node->ln);
+			tree_gen(node->ln);
 			return;
 		case NODE_NUM:
 			printf("li	x5,	%i\n",node->val);
 			return;
 	}
 
-	generate_code(node->ln);
+	tree_gen(node->ln);
 	push();
-	generate_code(node->rn);
+	printf("										%ld -- %ld -- %i\n",node->rn,node->ln,node->kind);
+	tree_gen(node->rn);
 	pop();
 
 
@@ -287,16 +329,33 @@ void generate_code(Node * node)
 		case NODE_EX_SUB:
 			printf("sub x5,	x5,	x6	#x6 <- x5 + x6\n");
 			return;
+		default:
+			printf("you did something wrong to end up here");
 	}
 
 	printf("you did something wrong to end up here");
 }
 
+void generate_code(Node * node)
+{
+	printf("li	x2,	0xF000\n");
+
+	Node * node_it = node;
+	while(node_it)
+	{
+		printf("-------- %ld----- %ld-----",node_it,node_it->next);
+		puts("loop_start");
+		pre_gen(node_it);
+		printf("-------- %ld----- %ld-----",node_it,node_it->next);
+		node_it = node_it->next;
+	}
+
+}
 
 
 int main(void)
 {
-	char * a = " 3+3-3+393993";
+	char * a = " 3+3-3+393993; 90+90;";
 	Token *tokens = tokenizer(a);
 	/*while(tokens->next != NULL)
 	{
