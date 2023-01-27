@@ -21,9 +21,15 @@ char isops(char c)
 		case '+':
 		case '-':
 		case ';':
+		case '=':
 			return 1;
 	}
 	return 0;
+}
+
+int islet(char c)
+{
+	return ((c >= 'a') && (c <= 'z')) | ((c >= 'A') && (c <= 'Z'));
 }
 
 // tokenizing
@@ -96,9 +102,23 @@ Token * tokenizer(char * input_code)
 			continue;
 		}
 
+
+		// adding Identifiers
+		// identifier = char ( char | num) *
+		if(islet(*input_code))
+		{
+			tokens->next = token_init(TOKEN_IDENT,input_code,input_code);
+			char * name_start = input_code;
+			while(islet(*input_code) | isdigit(*input_code))
+				{ input_code++; }
+			tokens->len = input_code - name_start;
+			continue;
+		}
+
 		// throw error
 		printf("unknown token %c at %i\n",input_code,code_start - input_code);
 		puts("unknown token");
+		exit(1);
 	}
 
 	tokens->next = token_init(TOKEN_EOF, input_code,input_code);
@@ -169,14 +189,36 @@ Node * ex_node(Node_kind kind, Node * ln, Node * rn)
 	return new_node;
 }
 
+Node * var_node(char * name)
+{
+	Node * new_node = calloc(1,sizeof(Node));
+	new_node->kind = NODE_VAR;
+	new_node->name = name;
+	return new_node;
+}
+
+
 
 Node * line(Token ** top, Token * cur)
 {
 	printf("line %i\n",cur->kind);
-	Node * node = node_ln_init(NODE_LINE_EX, ex(&cur,cur));
+	Node * node = node_ln_init(NODE_LINE_EX, assign(&cur,cur));
 	*top = ops_pass(cur,";");
 	return node;
 }
+
+// assign = var '=' ex
+Node * assign(Token ** top, Token * cur)
+{
+	Node * node = ex(&cur,cur);
+	if(ops_eq(cur,"="))
+	{
+		node = node_init(NODE_ASSIGN, node,	assign(&cur,cur->next));
+	}
+	*top = cur;
+	return node;
+}
+
 
 // ex = value (+ ex | - ex)*
 Node * ex(Token ** top, Token * cur)
@@ -228,16 +270,23 @@ Node * value(Token ** top, Token * cur)
 Node * num(Token ** top, Token * cur)
 {
 	printf("->num %i\n",cur->kind);
-	Node * node = calloc(1,sizeof(Node));
 	//printf("cur%i;kind%i\n",cur,cur->kind);
 	if(cur->kind == TOKEN_NUM){
-		node = num_node(cur->val);
+		Node *node = num_node(cur->val);
 		//printf("\ntop:%ld,sub_test:%i\n",*top,*top - cur->next);
 		printf("->%i\n",cur->val);
 		*top = cur->next;
 	return node;
 	}
 
+	if(cur->kind == TOKEN_IDENT)
+	{
+		Node * node = var_node(cur->s);
+		*top = cur->next;
+		return node;
+	}
+
+	Node * node = calloc(1,sizeof(Node));
 	return node;
 	
 	// throw a fat ol error there
@@ -277,6 +326,8 @@ Node * parser(Token * tokens)
 
 // code generation!
 
+
+
 void push(void)
 {
 	printf("sw	x5,	(x2) #push -> x5\n");
@@ -303,6 +354,7 @@ void pre_gen(Node *node)
 
 void tree_gen(Node * node)
 {
+	printf("new node kind = %i",node->kind);
 	switch (node->kind)
 	{
 		case NODE_NEG:
@@ -311,6 +363,18 @@ void tree_gen(Node * node)
 			return;
 		case NODE_NUM:
 			printf("li	x5,	%i\n",node->val);
+			return;
+		case NODE_ASSIGN:
+			// get memory adress of ln
+			// store value of rn to present register
+			push();
+			tree_gen(node->rn);
+			pop();
+			// store register to memory adress of ln
+			return;
+		case NODE_VAR:
+			// generate adress
+			// store adress's value to x5
 			return;
 	}
 
@@ -355,7 +419,7 @@ void generate_code(Node * node)
 
 int main(void)
 {
-	char * a = " 3+3-3+393993; 90+90;";
+	char * a = " a = 3+3-3+393993; 90+90;";
 	Token *tokens = tokenizer(a);
 	/*while(tokens->next != NULL)
 	{

@@ -50,6 +50,7 @@ Node * value_node(Node_kind, Node*);
 Node * ex(Token ** , Token * );
 Node * value(Token ** , Token * );
 Node * num(Token ** , Token * );
+Node * assign(Token ** , Token * );
 
 void tree_gen(Node * );
 void generate_code(Node * );
