@@ -4,6 +4,7 @@
 // tokenizer!
 typedef enum{
 	TOKEN_NUM,
+	TOKEN_IDENT, // for variables
 	TOKEN_EOF,
 	TOKEN_OPS
 }Token_kind;
@@ -23,7 +24,9 @@ Token * gtokens;
 // parser!
 typedef enum
 {
-	NODE_LINE_EX,
+	NODE_LINE_EX,// for a semicolon on the end of the line
+	NODE_ASSIGN, // =
+	NODE_VAR, 	 // x
 	NODE_NEG,
 	NODE_NUM,
 	NODE_VALUE,
@@ -38,6 +41,7 @@ struct Node{
 	Node * ln; // left node 
 	Node * rn; // right node
 	Node * next;
+	char * name; // for variables
 	int val; // for imm nums
 };
 
