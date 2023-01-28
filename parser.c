@@ -19,6 +19,47 @@ struct Node{
 };
 */
 
+Object *global;
+
+Object *search_object(Object * o, char * name)
+{
+	while(o)
+	{
+		if(o){
+			if(o->name){
+				if(strcmp(name,o->name) == 0) {
+					return o;
+				}
+			}
+		}
+		o = o->next;
+	};
+	return NULL;
+}
+
+Object * lvar_object(char * name, int name_len, int size)
+{
+	char * temp = calloc(name_len+1,sizeof(char));
+	for(int i =0; i<name_len; i++)
+		{temp[i] = name[i]; }	
+	temp[name_len] = '\0';
+
+	Object *result = search_object(global,temp);
+	if(result != NULL)
+		{return result;}
+	result = calloc(1,sizeof(Object));
+	result->name = temp;	
+	result->size = size;
+	result->offset = global->offset;
+	global->offset += size;
+	result->next = global->next;
+	global->next = result;
+	return result;
+}
+
+
+
+
 Node * node_init(Node_kind kind, Node * ln, Node * rn)
 {
 	Node * result = calloc(1, sizeof(Node));
@@ -154,7 +195,15 @@ Node * num(Token ** top, Token * cur)
 
 	if(cur->kind == TOKEN_IDENT)
 	{
+		puts("LKDJFS");
 		Node * node = var_node(cur->s);
+		Object *var = lvar_object(cur->s,cur->len,4);
+		node->var = var;
+
+		// create a local variable 
+		// size of 4 
+		// name is string?
+		//
 		*top = cur->next;
 		return node;
 	}
@@ -171,10 +220,11 @@ Node * num(Token ** top, Token * cur)
 // num;
 
 
-Node * parser(Token * tokens)
+Program * parser(Token * tokens)
 {
-	Node * head = node_init(NODE_HEAD,NULL,NULL);
-	Node * cur = head;
+	Program * prog = calloc(1,sizeof(Program));
+	Node * cur = prog->tree = calloc(1,sizeof(Node));
+
 	int i =0;
 	gtokens = tokens;
 	while(tokens->next->kind != TOKEN_EOF)
@@ -185,5 +235,13 @@ Node * parser(Token * tokens)
 		cur = cur->next;
 	}
 	
-	return head;
+	// finding how big the stack is 
+	int stack_size = 0;
+	for(Object *cur = global; cur; cur = cur->next)
+		{ stack_size += cur->size; }
+
+	prog->offset = stack_size;
+	prog->scope = global;	
+	prog->tree = prog->tree->next;
+	return prog;
 }

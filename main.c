@@ -2,7 +2,6 @@
 #include <strings.h>
 #include <ctype.h>
 #include <stdlib.h>
-
 #include "not2152.h"
 // not2152 compiler.
 //
@@ -21,7 +20,8 @@
 
 int main(void)
 {
-	char * a = " a = 3+3-3+393993; 90+90;";
+	global = calloc(1,sizeof(Object));
+	char * a = " a = 9; b = a; c = a + b;";
 	Token *tokens = tokenizer(a);
 	/*while(tokens->next != NULL)
 	{
@@ -29,8 +29,8 @@ int main(void)
 		tokens->next = tokens->next->next;
 	}*/
 
-	Node * nodes = parser(tokens);
-	generate_code(nodes);
+	Program * prog= parser(tokens);
+	generate_code(prog);
 
 	return 0;
 }

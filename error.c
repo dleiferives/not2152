@@ -11,9 +11,9 @@ void error_m(char * error_string, int line, char* file)
 	exit(1);
 }
 
-void token_error(char * error_string, int line, char c)
+void token_error(char * error_string, int line, char *s)
 {
-	printf("%c -- %s @ %i\n",c,error_string,line);
+	printf("%s -- %s @ %i\n",s,error_string,line);
 	exit(1);
 }
 #define error(str) (error_m(str,__LINE__,__FILE__))

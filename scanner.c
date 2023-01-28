@@ -26,7 +26,7 @@ Token * ops_pass(Token *tok, char *op)
 {
 	if(!ops_eq(tok,op))
 	{
-		error("Invalid token");
+		token_error("Invalid token",__LINE__,op);
 	}
 	return tok->next;
 }
@@ -94,7 +94,8 @@ Token * tokenizer(char * input_code)
 		// identifier = char ( char | num) *
 		if(islet(*input_code))
 		{
-			tokens->next = token_init(TOKEN_IDENT,input_code,input_code);
+			printf("identifier\n\n");
+			tokens = tokens->next = token_init(TOKEN_IDENT,input_code,input_code);
 			char * name_start = input_code;
 			while(islet(*input_code) | isdigit(*input_code))
 				{ input_code++; }
@@ -103,7 +104,7 @@ Token * tokenizer(char * input_code)
 		}
 
 		// throw error
-		token_error("unknown token",__LINE__,*input_code);
+		token_error("unknown token",__LINE__,input_code);
 		exit(1);
 	}
 

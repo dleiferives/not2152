@@ -1,5 +1,6 @@
 #ifndef NOT2152_H
 #define NOT2152_H
+#define STACK_START_POINTER 0xF000
 
 
 // tokenizer!
@@ -36,12 +37,15 @@ typedef enum
 	NODE_HEAD
 }Node_kind;
 
+typedef struct Program Program;
+typedef struct Object Object;
 typedef struct Node Node;
 struct Node{
 	Node_kind kind; // the kind of node
 	Node * ln; // left node 
 	Node * rn; // right node
 	Node * next;
+	Object * var; // used for NODE_VAR
 	char * name; // for variables
 	int val; // for imm nums
 };
@@ -53,8 +57,29 @@ Node * value(Token ** , Token * );
 Node * num(Token ** , Token * );
 Node * assign(Token ** , Token * );
 
+
+struct Program
+{
+	Node *tree;
+	Object *scope;
+	Program *next;
+	int offset;
+};
+
+
+struct Object
+{
+	int size;
+	int offset;
+	char *name;
+	Object *next;
+};
+
+
+
+
 void tree_gen(Node * );
-void generate_code(Node * );
+void generate_code(Program * );
 void pre_gen(Node*);
 #endif
 
