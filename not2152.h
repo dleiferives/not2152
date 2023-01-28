@@ -1,6 +1,7 @@
 #ifndef NOT2152_H
 #define NOT2152_H
 
+
 // tokenizer!
 typedef enum{
 	TOKEN_NUM,
@@ -56,3 +57,9 @@ void tree_gen(Node * );
 void generate_code(Node * );
 void pre_gen(Node*);
 #endif
+
+#include "error.c"
+#include "scanner.c"
+#include "parser.c"
+#include "code_gen.c"
+
